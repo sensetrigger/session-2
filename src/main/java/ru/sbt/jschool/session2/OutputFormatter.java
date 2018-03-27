@@ -76,7 +76,7 @@ class Builder {
         }
     }
 
-    int cellLength(Object obj) {
+    final int cellLength(Object obj) {
         if (obj instanceof Date)
             return 10;
         else
