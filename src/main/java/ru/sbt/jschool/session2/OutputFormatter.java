@@ -62,16 +62,13 @@ class Builder {
         cols = names.length;
         width = new int[names.length];
 
-        // заполняем width значением по умолчанию
         for (int i = 0; i < names.length; i++)
             width[i] = width_default;
 
-        // устанавливаем максимальную ширину для всех names
         for (int i = 0; i < names.length; i++)
             if (names[i].length() > width[i])
                 width[i] = names[i].length();
 
-        // устанавливаем максимальную ширину для всех data
         for (int i = 0; i < data.length; i++) {
             for (int j = 0; j < data[i].length; j++)
                 if (this.cellLength(data[i][j]) > width[j])
