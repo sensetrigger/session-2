@@ -17,7 +17,7 @@
 
 package ru.sbt.jschool.session2;
 
-import com.sun.org.apache.xpath.internal.operations.Number;
+//import com.sun.org.apache.xpath.internal.operations.Number;
 
 import java.io.PrintStream;
 import java.text.DecimalFormat;
@@ -37,12 +37,15 @@ public class OutputFormatter {
     }
 
     public void output(String[] names, Object[][] data) {
-        System.setOut(this.out);
-
-        //TODO: implement me.
-        //System.out.println(Arrays.deepToString(data));
         Builder table = new Builder(names, data);
-        //this.out = drawTable(names,data);
+
+        PrintStream old = System.out;
+
+        System.setOut(this.out);
+        table.drawTable(names, data);
+
+        System.setOut(old);
+        table.drawTable(names, data);
     }
 }
 
@@ -59,7 +62,7 @@ class Builder {
         cols = names.length;
         width = new int[names.length];
 
-        // заполняем "нулями" width
+        // заполняем width значением по умолчанию
         for (int i = 0; i < names.length; i++)
             width[i] = width_default;
 
@@ -74,21 +77,13 @@ class Builder {
                 if (this.cellLength(data[i][j]) > width[j])
                     width[j] = this.cellLength(data[i][j]);
         }
-        this.drawTable(names, data);
     }
 
     int cellLength(Object obj) {
-        if (obj instanceof String)
-            return ((String) obj).length();
-        else if (obj instanceof Date)
+        if (obj instanceof Date)
             return 10;
-        else if (obj instanceof Float)
-            return ((Float) obj).toString().length();
-        else if (obj instanceof Double)
-            return ((Double) obj).toString().length();
-        else if (obj instanceof Integer)
-            return ((Integer) obj).toString().length();
-        return -1;
+        else
+            return convert(obj).toString().length();
     }
 
     void drawTable(String[] names, Object[][] data) {
@@ -105,9 +100,15 @@ class Builder {
             drawRowLine();
             System.out.print("|");
             for (int j = 0; j < cols; j++) {
-                if (data[i][j] instanceof String)
+                if (data[i][j] == null) {
+                    if ((i > 1) & data[i-1][j] instanceof String)
+                        drawCellText(convert(data[i][j]), j, Align.LEFT);
+                    else
+                        drawCellText(convert(data[i][j]), j, Align.RIGHT);
+                }
+                else if (data[i][j] instanceof String)
                     drawCellText(convert(data[i][j]), j, Align.LEFT);
-                else if ((data[i][j] instanceof Date) || (data[i][j] instanceof Float) || (data[i][j] instanceof Double) || (data[i][j] instanceof Number))
+                else
                     drawCellText(convert(data[i][j]), j, Align.RIGHT);
                 System.out.print("|");
             }
@@ -134,7 +135,11 @@ class Builder {
     String convert(Object obj) {
         String result = null;
         if (obj == null)
-            return "-";
+            result = "-";
+        else if (obj instanceof String)
+        {
+            result = (String) obj;
+        }
         else if (obj instanceof Date) {
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
             result = dateFormat.format((Date) obj);
@@ -148,17 +153,14 @@ class Builder {
             result = doubleFormat.format((Double) obj);
         }
         else if (obj instanceof Number) {
-            DecimalFormat numberFormat = new DecimalFormat("###.###");
+            DecimalFormat numberFormat = new DecimalFormat("###,###");
             result = numberFormat.format((Number) obj);
         }
         return result;
     }
 
     void drawCellText(String source, int index, Align align) {
-        if (source == null) {
-            align = Align.RIGHT;
-        }
-        else if (align == Align.CENTER) {
+        if (align == Align.CENTER) {
             int skip = (this.width[index] - source.length()) / 2;
             for (int i = 0; i < skip; i++)
                 System.out.print(" ");
