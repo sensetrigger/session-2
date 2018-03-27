@@ -50,12 +50,12 @@ public class OutputFormatter {
 }
 
 class Builder {
-    int rows;
-    int cols;
-    int height_default = 1;
-    int width_default = 1;
-    int [] width;
-    enum Align {LEFT, CENTER, RIGHT};
+    private int rows;
+    private int cols;
+    private int height_default = 1;
+    private int width_default = 1;
+    private int [] width;
+    private enum Align {LEFT, CENTER, RIGHT};
 
     Builder(String [] names, Object[][] data) {
         rows = data.length;
