@@ -31,71 +31,110 @@ import java.util.Date;
  */
 public class OutputFormatter {
     private PrintStream out;
-
-    public OutputFormatter(PrintStream out) {
-        this.out = out;
-    }
-
-    public void output(String[] names, Object[][] data) {
-        Builder table = new Builder(names, data);
-
-        PrintStream old = System.out;
-
-        System.setOut(this.out);
-        table.drawTable(names, data);
-
-        System.setOut(old);
-        table.drawTable(names, data);
-    }
-}
-
-class Builder {
     private int rows;
     private int cols;
-    private int height_default = 1;
-    private int width_default = 1;
+    private int heightDefault = 1;
+    private int widthDefault = 1;
     private int [] width;
     private enum Align {LEFT, CENTER, RIGHT};
 
-    Builder(String [] names, Object[][] data) {
-        rows = data.length;
-        cols = names.length;
-        width = new int[names.length];
-
-        for (int i = 0; i < names.length; i++)
-            width[i] = width_default;
-
-        for (int i = 0; i < names.length; i++)
-            if (names[i].length() > width[i])
-                width[i] = names[i].length();
-
-        for (int i = 0; i < data.length; i++) {
-            for (int j = 0; j < data[i].length; j++)
-                if (this.cellLength(data[i][j]) > width[j])
-                    width[j] = this.cellLength(data[i][j]);
-        }
-    }
-
-    final int cellLength(Object obj) {
+    final private int cellLength(Object obj) {
         if (obj instanceof Date)
             return 10;
         else
             return convert(obj).toString().length();
     }
 
-    void drawTable(String[] names, Object[][] data) {
-        drawRowLine();
-        System.out.print("|");
+    private String convert(Object obj) {
+        if (obj == null)
+            return "-";
+        else if (obj instanceof String)
+            return (String) obj;
+        else if (obj instanceof Date) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+            return dateFormat.format((Date) obj);
+        }
+        else if (obj instanceof Float) {
+            DecimalFormat floatFormat = new DecimalFormat("###,##0.00");
+            return floatFormat.format((Float) obj);
+        }
+        else if (obj instanceof Double) {
+            DecimalFormat doubleFormat = new DecimalFormat("###,##0.00");
+            return doubleFormat.format((Double) obj);
+        }
+        else if (obj instanceof Number) {
+            DecimalFormat numberFormat = new DecimalFormat("###,###");
+            return numberFormat.format((Number) obj);
+        }
+        return "-";
+    }
+
+    private void drawCellText(String source, int index, Align align) {
+        if (align == Align.CENTER) {
+            int skip = (this.width[index] - source.length()) / 2;
+            for (int i = 0; i < skip; i++)
+                this.out.print(" ");
+            this.out.print(source);
+            for (int i = 0; i < this.width[index] - source.length() - skip; i++)
+                this.out.print(" ");
+        }
+        else if (align == Align.RIGHT) {
+            for (int i = 0; i < this.width[index] - source.length(); i++)
+                this.out.print(" ");
+            this.out.print(source);
+        }
+        else if (align == Align.LEFT) {
+            this.out.print(source);
+            for (int i = 0; i < this.width[index] - source.length(); i++)
+                this.out.print(" ");
+        }
+    }
+
+    public OutputFormatter(PrintStream out) {
+        this.out = out;
+    }
+
+    public void output(String[] names, Object[][] data) {
+        this.rows = data.length;
+        this.cols = names.length;
+        this.width = new int[names.length];
+
+        for (int i = 0; i < names.length; i++)
+            this.width[i] = widthDefault;
+
+        for (int i = 0; i < names.length; i++)
+            if (names[i].length() > width[i])
+                this.width[i] = names[i].length();
+
+        for (int i = 0; i < data.length; i++) {
+            for (int j = 0; j < data[i].length; j++)
+                if (this.cellLength(data[i][j]) > width[j])
+                    this.width[j] = this.cellLength(data[i][j]);
+        }
+
+        this.out.print("+");
+        for (int r = 0; r < cols; r++) {
+            for (int c = 0; c < this.width[r]; c++)
+                this.out.print("-");
+            this.out.print("+");
+        }
+        this.out.println();
+        this.out.print("|");
         for (int i = 0; i < cols; i++) {
             drawCellText(names[i], i, Align.CENTER);
-            System.out.print("|");
+            this.out.print("|");
         }
-        System.out.println();
+        this.out.println();
 
-        for (int i = 0; i < data.length; i++)
-        {
-            drawRowLine();
-            System.out.print("|");
+        for (int i = 0; i < data.length; i++) {
+            this.out.print("+");
+            for (int r = 0; r < cols; r++) {
+                for (int c = 0; c < this.width[r]; c++)
+                    this.out.print("-");
+                this.out.print("+");
+            }
+            this.out.println();
+            this.out.print("|");
             for (int j = 0; j < cols; j++) {
                 if (data[i][j] == null) {
                     if ((i > 1) & data[i-1][j] instanceof String)
@@ -107,75 +146,17 @@ class Builder {
                     drawCellText(convert(data[i][j]), j, Align.LEFT);
                 else
                     drawCellText(convert(data[i][j]), j, Align.RIGHT);
-                System.out.print("|");
+                this.out.print("|");
             }
-            System.out.println();
+            this.out.println();
 
         }
-        drawRowLine();
-    }
-
-    void drawCellLine(int count) {
-        for (int i = 0; i < count; i++)
-                System.out.print("-");
-    }
-
-    void drawRowLine() {
-        System.out.print("+");
-        for (int i = 0; i < cols; i++) {
-            drawCellLine(this.width[i]);
-            System.out.print("+");
+        this.out.print("+");
+        for (int r = 0; r < cols; r++) {
+            for (int c = 0; c < this.width[r]; c++)
+                this.out.print("-");
+            this.out.print("+");
         }
-        System.out.println();
-    }
-
-    String convert(Object obj) {
-        String result = null;
-        if (obj == null)
-            result = "-";
-        else if (obj instanceof String)
-        {
-            result = (String) obj;
-        }
-        else if (obj instanceof Date) {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-            result = dateFormat.format((Date) obj);
-        }
-        else if (obj instanceof Float) {
-            DecimalFormat floatFormat = new DecimalFormat("###,##0.00");
-            result = floatFormat.format((Float) obj);
-        }
-        else if (obj instanceof Double) {
-            DecimalFormat doubleFormat = new DecimalFormat("###,##0.00");
-            result = doubleFormat.format((Double) obj);
-        }
-        else if (obj instanceof Number) {
-            DecimalFormat numberFormat = new DecimalFormat("###,###");
-            result = numberFormat.format((Number) obj);
-        }
-        return result;
-    }
-
-    void drawCellText(String source, int index, Align align) {
-        if (align == Align.CENTER) {
-            int skip = (this.width[index] - source.length()) / 2;
-            for (int i = 0; i < skip; i++)
-                System.out.print(" ");
-            System.out.print(source);
-            for (int i = 0; i < this.width[index] - source.length() - skip; i++)
-                System.out.print(" ");
-        }
-        else if (align == Align.RIGHT)
-        {
-            for (int i = 0; i < this.width[index] - source.length(); i++)
-                System.out.print(" ");
-            System.out.print(source);
-        }
-        else if (align == Align.LEFT)
-        {
-            System.out.print(source);
-            for (int i = 0; i < this.width[index] - source.length(); i++)
-                System.out.print(" ");
-        }
+        this.out.println();
     }
 }
