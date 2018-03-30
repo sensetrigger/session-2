@@ -35,7 +35,7 @@ public class OutputFormatter {
     private int cols;
     private int heightDefault = 1;
     private int widthDefault = 1;
-    private int [] width;
+    private int[] width;
     private enum Align {LEFT, CENTER, RIGHT};
 
     final private int cellLength(Object obj) {
